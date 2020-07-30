@@ -22,7 +22,6 @@ from TTS.utils.radam import RAdam
 
 torch.backends.cudnn.enabled = True
 torch.backends.cudnn.benchmark = True
-torch.manual_seed(54321)
 use_cuda = torch.cuda.is_available()
 num_gpus = torch.cuda.device_count()
 print(" > Using CUDA: ", use_cuda)
@@ -127,6 +126,7 @@ def main(args):  # pylint: disable=redefined-outer-name
     # pylint: disable=global-variable-undefined
     global meta_data_train
     global meta_data_eval
+    torch.manual_seed(c.speaker_encoder_seed)
 
     ap = AudioProcessor(**c.audio)
     model = SpeakerEncoder(input_dim=40,

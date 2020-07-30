@@ -34,7 +34,6 @@ from TTS.utils.measures import alignment_diagonal_score
 
 torch.backends.cudnn.enabled = True
 torch.backends.cudnn.benchmark = False
-torch.manual_seed(54321)
 use_cuda = torch.cuda.is_available()
 num_gpus = torch.cuda.device_count()
 print(" > Using CUDA: ", use_cuda)
@@ -481,6 +480,7 @@ def evaluate(model, criterion, ap, global_step, epoch):
 def main(args):  # pylint: disable=redefined-outer-name
     # pylint: disable=global-variable-undefined
     global meta_data_train, meta_data_eval, symbols, phonemes
+    torch.manual_seed(c.tacotron_seed)
     # Audio processor
     ap = AudioProcessor(**c.audio)
     if 'characters' in c.keys():
