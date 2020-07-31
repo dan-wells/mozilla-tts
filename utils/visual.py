@@ -24,6 +24,7 @@ def plot_alignment(alignment, info=None, fig_size=(16, 10), title=None):
     plt.tight_layout()
     if title is not None:
         plt.title(title)
+    plt.close()
     return fig
 
 
@@ -37,6 +38,7 @@ def plot_spectrogram(linear_output, audio, fig_size=(16, 10)):
     plt.imshow(spectrogram, aspect="auto", origin="lower")
     plt.colorbar()
     plt.tight_layout()
+    plt.close()
     return fig
 
 
@@ -89,4 +91,4 @@ def visualize(alignment, postnet_output, stop_tokens, text, hop_length, CONFIG, 
     if output_path:
         print(output_path)
         fig.savefig(output_path)
-        plt.close()
+    plt.close()
