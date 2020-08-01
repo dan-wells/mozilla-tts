@@ -431,8 +431,11 @@ def evaluate(model, criterion, ap, global_step, epoch):
             else:
                 input_units = symbols
                 units_header = ['Characters']
+            embedding_tag = 'input_embeddings'
+            if c.tb_save_all_embeddings:
+                embedding_tag += '_{}'.format(global_step)
             tb_logger.tb_input_embedding(
-                    'input_embeddings', model.embedding.weight, input_units, 'projector')
+                    embedding_tag, model.embedding.weight, input_units, 'projector')
 
     if args.rank == 0 and epoch > c.test_delay_epochs:
         if c.test_sentences_file is None:

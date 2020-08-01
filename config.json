@@ -107,6 +107,7 @@
     "save_step": 10000,      // Number of training steps expected to save traninpg stats and checkpoints.
     "checkpoint": true,     // If true, it saves checkpoints per "save_step"
     "tb_model_param_stats": false,     // true, plots param stats per layer on tensorboard. Might be memory consuming, but good for debugging.
+    "tb_save_all_embeddings": false,    // If True, save input_embeddings after every epoch, rather than just the most recent set of weights.
 
     // DATA LOADING
     "text_cleaner": "phoneme_cleaners",
