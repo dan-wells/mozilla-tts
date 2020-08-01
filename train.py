@@ -424,6 +424,16 @@ def evaluate(model, criterion, ap, global_step, epoch):
             tb_logger.tb_eval_stats(global_step, epoch_stats)
             tb_logger.tb_eval_figures(global_step, eval_figures)
 
+            # Log input embeddings
+            if c.use_phonemes:
+                input_units = phonemes
+                units_header = ['Phones']
+            else:
+                input_units = symbols
+                units_header = ['Characters']
+            tb_logger.tb_input_embedding(
+                    'input_embeddings', model.embedding.weight, input_units, 'projector')
+
     if args.rank == 0 and epoch > c.test_delay_epochs:
         if c.test_sentences_file is None:
             test_sentences = [

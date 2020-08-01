@@ -78,3 +78,6 @@ class TensorboardLogger(object):
 
     def tb_add_text(self, title, text, step):
         self.writer.add_text(title, text, step)
+
+    def tb_input_embedding(self, tag, embedding, metadata, subdir):
+        self.writer.add_embedding(embedding, metadata=metadata, global_step=subdir, tag=tag)
