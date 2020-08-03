@@ -5,7 +5,8 @@ import torch
 import random
 from torch.utils.data import Dataset
 
-from TTS.utils.text import text_to_sequence, phoneme_to_sequence, pad_with_eos_bos
+from TTS.utils.text import text_to_sequence, phoneme_to_sequence, sequence_to_phoneme, pad_with_eos_bos
+from TTS.utils.text.features import SPEFeatures, phoneme_to_feature, spe_feature_map
 from TTS.utils.data import prepare_data, prepare_tensor, prepare_stop_target
 
 
@@ -23,6 +24,7 @@ class MyDataset(Dataset):
                  use_phonemes=True,
                  phoneme_cache_path=None,
                  phoneme_language="en-us",
+                 use_features=False,
                  enable_eos_bos=False,
                  verbose=False):
         """
@@ -41,6 +43,7 @@ class MyDataset(Dataset):
             phoneme_cache_path (str): path to cache phoneme features.
             phoneme_language (str): one the languages from
                 https://github.com/bootphon/phonemizer#languages
+            use_features (bool): (false) if true, text converted to phonological features.
             enable_eos_bos (bool): enable end of sentence and beginning of sentences characters.
             verbose (bool): print diagnostic information.
         """
@@ -57,6 +60,7 @@ class MyDataset(Dataset):
         self.use_phonemes = use_phonemes
         self.phoneme_cache_path = phoneme_cache_path
         self.phoneme_language = phoneme_language
+        self.use_features = use_features
         self.enable_eos_bos = enable_eos_bos
         self.verbose = verbose
         if use_phonemes and not os.path.isdir(phoneme_cache_path):
@@ -66,6 +70,9 @@ class MyDataset(Dataset):
             print(" | > Use phonemes: {}".format(self.use_phonemes))
             if use_phonemes:
                 print("   | > phoneme language: {}".format(phoneme_language))
+            print(" | > Use features: {}".format(self.use_features))
+            if use_features:
+                print("   | > feature dimension: {}".format(len(SPEFeatures._fields)))
             print(" | > Number of instances : {}".format(len(self.items)))
         self.sort_items()
 
@@ -110,12 +117,20 @@ class MyDataset(Dataset):
             phonemes = np.asarray(phonemes, dtype=np.int32)
         return phonemes
 
+    def _generate_feature_sequence(self, text, feature_map):
+        phonemes = sequence_to_phoneme(text)
+        features = phoneme_to_feature(phonemes, spe_feature_map)
+        features = np.asarray(features, dtype=np.int32)
+        return features
+
     def load_data(self, idx):
         text, wav_file, speaker_name = self.items[idx]
         wav = np.asarray(self.load_wav(wav_file), dtype=np.float32)
 
         if self.use_phonemes:
             text = self._load_or_generate_phoneme_sequence(wav_file, text)
+            if self.use_features:
+                text = self._generate_feature_sequence(text, spe_feature_map)
         else:
             text = np.asarray(
                 text_to_sequence(text, [self.cleaners], tp=self.tp), dtype=np.int32)
@@ -209,7 +224,14 @@ class MyDataset(Dataset):
                                                self.outputs_per_step)
 
             # PAD sequences with longest instance in the batch
-            text = prepare_data(text).astype(np.int32)
+            if self.use_features:
+                text = [i.transpose() for i in text] # features dim x length
+                text = prepare_tensor(text, 1)
+                text = torch.FloatTensor(text)
+            else:
+                text = prepare_data(text).astype(np.int32)
+                text = torch.LongTensor(text)
+            text_lenghts = torch.LongTensor(text_lenghts)
 
             # PAD features with longest instance
             mel = prepare_tensor(mel, self.outputs_per_step)
@@ -218,8 +240,6 @@ class MyDataset(Dataset):
             mel = mel.transpose(0, 2, 1)
 
             # convert things to pytorch
-            text_lenghts = torch.LongTensor(text_lenghts)
-            text = torch.LongTensor(text)
             mel = torch.FloatTensor(mel).contiguous()
             mel_lengths = torch.LongTensor(mel_lengths)
             stop_targets = torch.FloatTensor(stop_targets)

@@ -179,7 +179,8 @@ def setup_model(num_chars, num_speakers, c):
                         location_attn=c.location_attn,
                         attn_K=c.attention_heads,
                         separate_stopnet=c.separate_stopnet,
-                        bidirectional_decoder=c.bidirectional_decoder)
+                        bidirectional_decoder=c.bidirectional_decoder,
+                        feature_inputs=c.use_features)
     return model
 
 class KeepAverage():

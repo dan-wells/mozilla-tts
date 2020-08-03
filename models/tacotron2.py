@@ -25,17 +25,23 @@ class Tacotron2(nn.Module):
                  location_attn=True,
                  attn_K=5,
                  separate_stopnet=True,
-                 bidirectional_decoder=False):
+                 bidirectional_decoder=False,
+                 feature_inputs=False):
         super(Tacotron2, self).__init__()
         self.postnet_output_dim = postnet_output_dim
         self.decoder_output_dim = decoder_output_dim
         self.r = r
         self.bidirectional_decoder = bidirectional_decoder
+        self.feature_inputs = feature_inputs
         decoder_dim = 512 if num_speakers > 1 else 512
         encoder_dim = 512 if num_speakers > 1 else 512
         proj_speaker_dim = 80 if num_speakers > 1 else 0
         # embedding layer
-        self.embedding = nn.Embedding(num_chars, 512, padding_idx=0)
+        if self.feature_inputs:
+            self.embedding = nn.Conv1d(in_channels=num_chars, out_channels=512,
+                                       kernel_size=1, bias=False)
+        else:
+            self.embedding = nn.Embedding(num_chars, 512, padding_idx=0)
         std = sqrt(2.0 / (num_chars + 512))
         val = sqrt(3.0) * std  # uniform bounds for std
         self.embedding.weight.data.uniform_(-val, val)
@@ -67,7 +73,10 @@ class Tacotron2(nn.Module):
         self._init_states()
         # compute mask for padding
         mask = sequence_mask(text_lengths).to(text.device)
-        embedded_inputs = self.embedding(text).transpose(1, 2)
+        if self.feature_inputs:
+            embedded_inputs = self.embedding(text)
+        else:
+            embedded_inputs = self.embedding(text).transpose(1, 2)
         encoder_outputs = self.encoder(embedded_inputs, text_lengths)
         encoder_outputs = self._add_speaker_embedding(encoder_outputs,
                                                       speaker_ids)
@@ -84,7 +93,10 @@ class Tacotron2(nn.Module):
 
     @torch.no_grad()
     def inference(self, text, speaker_ids=None):
-        embedded_inputs = self.embedding(text).transpose(1, 2)
+        if self.feature_inputs:
+            embedded_inputs = self.embedding(text)
+        else:
+            embedded_inputs = self.embedding(text).transpose(1, 2)
         encoder_outputs = self.encoder.inference(embedded_inputs)
         encoder_outputs = self._add_speaker_embedding(encoder_outputs,
                                                       speaker_ids)
@@ -100,7 +112,10 @@ class Tacotron2(nn.Module):
         """
         Preserve model states for continuous inference
         """
-        embedded_inputs = self.embedding(text).transpose(1, 2)
+        if self.feature_inputs:
+            embedded_inputs = self.embedding(text)
+        else:
+            embedded_inputs = self.embedding(text).transpose(1, 2)
         encoder_outputs = self.encoder.inference_truncated(embedded_inputs)
         encoder_outputs = self._add_speaker_embedding(encoder_outputs,
                                                       speaker_ids)

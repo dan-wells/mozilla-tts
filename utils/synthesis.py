@@ -4,7 +4,8 @@ if 'tensorflow' in installed or 'tensorflow-gpu' in installed:
     import tensorflow as tf
 import torch
 import numpy as np
-from .text import text_to_sequence, phoneme_to_sequence
+from .text import text_to_sequence, phoneme_to_sequence, sequence_to_phoneme
+from .text.features import phoneme_to_feature, spe_feature_map
 
 
 def text_to_seqvec(text, CONFIG):
@@ -16,6 +17,10 @@ def text_to_seqvec(text, CONFIG):
                                 CONFIG.enable_eos_bos_chars,
                                 tp=CONFIG.characters if 'characters' in CONFIG.keys() else None),
             dtype=np.int32)
+        if CONFIG.use_features:
+            phonemes = sequence_to_phoneme(seq)
+            seq = np.asarray(phoneme_to_feature(phonemes, spe_feature_map), dtype=np.int32)
+            seq = seq.transpose() # features dim x length
     else:
         seq = np.asarray(text_to_sequence(text, text_cleaner, tp=CONFIG.characters if 'characters' in CONFIG.keys() else None), dtype=np.int32)
     return seq
@@ -162,7 +167,11 @@ def synthesis(model,
     if backend == 'torch':
         speaker_id = id_to_torch(speaker_id)
         style_mel = numpy_to_torch(style_mel, torch.float, cuda=use_cuda)
-        inputs = numpy_to_torch(inputs, torch.long, cuda=use_cuda)
+        if CONFIG.use_features:
+            # must match conv1d weights type
+            inputs = numpy_to_torch(inputs, torch.float, cuda=use_cuda)
+        else:
+            inputs = numpy_to_torch(inputs, torch.long, cuda=use_cuda)
         inputs = inputs.unsqueeze(0)
     else:
         # TODO: handle speaker id for tf model

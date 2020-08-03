@@ -27,6 +27,7 @@ from TTS.utils.speakers import load_speaker_mapping, save_speaker_mapping, \
     get_speakers
 from TTS.utils.synthesis import synthesis
 from TTS.utils.text.symbols import make_symbols, phonemes, symbols
+from TTS.utils.text.features import spe_features, spe_feature_map
 from TTS.utils.visual import plot_alignment, plot_spectrogram
 from TTS.datasets.preprocess import load_meta_data
 from TTS.utils.radam import RAdam
@@ -58,6 +59,7 @@ def setup_loader(ap, r, is_val=False, verbose=False):
             phoneme_cache_path=c.phoneme_cache_path,
             use_phonemes=c.use_phonemes,
             phoneme_language=c.phoneme_language,
+            use_features=c.use_features,
             enable_eos_bos=c.enable_eos_bos_chars,
             verbose=verbose)
         sampler = DistributedSampler(dataset) if num_gpus > 1 else None
@@ -425,17 +427,34 @@ def evaluate(model, criterion, ap, global_step, epoch):
             tb_logger.tb_eval_figures(global_step, eval_figures)
 
             # Log input embeddings
-            if c.use_phonemes:
-                input_units = phonemes
-                units_header = ['Phones']
-            else:
-                input_units = symbols
-                units_header = ['Characters']
             embedding_tag = 'input_embeddings'
             if c.tb_save_all_embeddings:
                 embedding_tag += '_{}'.format(global_step)
-            tb_logger.tb_input_embedding(
-                    embedding_tag, model.embedding.weight, input_units, 'projector')
+            if c.use_features:
+                if c.tb_plot_all_phones:
+                    embedding_inputs = spe_feature_map.keys()
+                else:
+                    # /ɚ/ is mapped to /@r/ sequence in spe_feature_map
+                    embedding_inputs = [i for i in phonemes if i in spe_feature_map and i != 'ɚ']
+                # TODO: put all inputs into a single tensor and run a single forward pass
+                embeddings = []
+                for phone in embedding_inputs:
+                    spe_tensor = torch.FloatTensor(spe_feature_map[phone])
+                    spe_tensor = spe_tensor.reshape(1, len(spe_features), 1)
+                    if use_cuda:
+                        spe_tensor = spe_tensor.cuda(non_blocking=True)
+                    embedding = model.embedding.forward(spe_tensor).squeeze()
+                    embedding = embedding.detach().cpu().numpy()
+                    embeddings.append(embedding)
+                    #print('Embedding /{}/: {}'.format(k, embedding[:4]))
+            else:
+                # otherwise can just rely on weight indices matching input unit lists
+                if c.use_phonemes:
+                    embedding_inputs = phonemes
+                else:
+                    embedding_inputs = symbols
+                embeddings = model.embedding.weight
+            tb_logger.tb_input_embedding(embedding_tag, embeddings, embedding_inputs, 'projector')
 
     if args.rank == 0 and epoch > c.test_delay_epochs:
         if c.test_sentences_file is None:
@@ -503,7 +522,14 @@ def main(args):  # pylint: disable=redefined-outer-name
     if num_gpus > 1:
         init_distributed(args.rank, num_gpus, args.group_id,
                          c.distributed["backend"], c.distributed["url"])
-    num_chars = len(phonemes) if c.use_phonemes else len(symbols)
+    # use_features requires use_phonemes, but features dim should
+    # take precedence
+    if c.use_features:
+        num_chars = len(spe_features)
+    elif c.use_phonemes:
+        num_chars = len(phonemes)
+    else:
+        num_chars = len(symbols)
 
     # load data instances
     meta_data_train, meta_data_eval = load_meta_data(c.datasets)
