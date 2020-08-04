@@ -117,8 +117,8 @@ class MyDataset(Dataset):
             phonemes = np.asarray(phonemes, dtype=np.int32)
         return phonemes
 
-    def _generate_feature_sequence(self, text, feature_map):
-        phonemes = sequence_to_phoneme(text)
+    def _generate_feature_sequence(self, text, feature_map, tp=None):
+        phonemes = sequence_to_phoneme(text, tp)
         features = phoneme_to_feature(phonemes, spe_feature_map)
         features = np.asarray(features, dtype=np.int32)
         return features
@@ -130,7 +130,7 @@ class MyDataset(Dataset):
         if self.use_phonemes:
             text = self._load_or_generate_phoneme_sequence(wav_file, text)
             if self.use_features:
-                text = self._generate_feature_sequence(text, spe_feature_map)
+                text = self._generate_feature_sequence(text, spe_feature_map, self.tp)
         else:
             text = np.asarray(
                 text_to_sequence(text, [self.cleaners], tp=self.tp), dtype=np.int32)
