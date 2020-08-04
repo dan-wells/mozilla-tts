@@ -12,13 +12,13 @@ def text_to_seqvec(text, CONFIG):
     text_cleaner = [CONFIG.text_cleaner]
     # text ot phonemes to sequence vector
     if CONFIG.use_phonemes:
+        tp=CONFIG.characters if 'characters' in CONFIG.keys() else None
         seq = np.asarray(
             phoneme_to_sequence(text, text_cleaner, CONFIG.phoneme_language,
-                                CONFIG.enable_eos_bos_chars,
-                                tp=CONFIG.characters if 'characters' in CONFIG.keys() else None),
+                                CONFIG.enable_eos_bos_chars, tp),
             dtype=np.int32)
         if CONFIG.use_features:
-            phonemes = sequence_to_phoneme(seq)
+            phonemes = sequence_to_phoneme(seq, tp)
             seq = np.asarray(phoneme_to_feature(phonemes, spe_feature_map), dtype=np.int32)
             seq = seq.transpose() # features dim x length
     else:
