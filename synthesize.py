@@ -8,6 +8,7 @@ import string
 
 from TTS.utils.synthesis import synthesis
 from TTS.utils.generic_utils import setup_model
+from TTS.utils.html import make_audio_page
 from TTS.utils.io import load_config
 from TTS.utils.text.symbols import make_symbols, symbols, phonemes
 from TTS.utils.audio import AudioProcessor
@@ -52,7 +53,7 @@ if __name__ == "__main__":
     global symbols, phonemes
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('text', type=str, help='Text to generate speech.')
+    parser.add_argument('text', type=str, help='Text to generate speech, or file containing multiple utterances.')
     parser.add_argument('config_path',
                         type=str,
                         help='Path to model config file.')
@@ -95,6 +96,11 @@ if __name__ == "__main__":
         type=int,
         help="target speaker_id if the model is multi-speaker.",
         default=None)
+    parser.add_argument(
+        '--html_audio_page',
+        type=str,
+        help="File to write html for playing generated audio files.",
+        default="")
     args = parser.parse_args()
 
     if args.vocoder_path != "":
@@ -159,24 +165,44 @@ if __name__ == "__main__":
         VC = None
         ap_vocoder = None
 
-    # synthesize voice
-    print(" > Text: {}".format(args.text))
-    _, _, _, wav = tts(model,
-                       vocoder_model,
-                       C,
-                       VC,
-                       args.text,
-                       ap,
-                       ap_vocoder,
-                       args.use_cuda,
-                       args.batched_vocoder,
-                       speaker_id=args.speaker_id,
-                       figures=False)
+    # get input texts
+    if os.path.isfile(args.text):
+        with open(args.text) as text_lines:
+            texts = [i.strip() for i in text_lines.readlines()]
+    else:
+        texts = [args.text]
 
-    # save the results
-    file_name = args.text.replace(" ", "_")
-    file_name = file_name.translate(
-        str.maketrans('', '', string.punctuation.replace('_', ''))) + '.wav'
-    out_path = os.path.join(args.out_path, file_name)
-    print(" > Saving output to {}".format(out_path))
-    ap.save_wav(wav, out_path)
+    if args.html_audio_page:
+        wavs = []
+
+    # synthesize voice
+    for text in texts:
+        print(" > Text: {}".format(text))
+        _, _, _, wav = tts(model,
+                           vocoder_model,
+                           C,
+                           VC,
+                           text,
+                           ap,
+                           ap_vocoder,
+                           args.use_cuda,
+                           args.batched_vocoder,
+                           speaker_id=args.speaker_id,
+                           figures=False)
+
+        # save the results
+        file_name = text.replace(" ", "_")
+        file_name = file_name.translate(
+            str.maketrans('', '', string.punctuation.replace('_', ''))) + '.wav'
+        if not os.path.exists(args.out_path):
+            os.makedirs(args.out_path)
+        out_path = os.path.join(args.out_path, file_name)
+        print(" > Saving output to {}".format(out_path))
+        ap.save_wav(wav, out_path)
+        if args.html_audio_page:
+            wavs.append(out_path)
+
+    # write html audio page
+    if args.html_audio_page:
+        make_audio_page(audios=wavs, transcripts=texts, html_out=args.html_audio_page)
+
