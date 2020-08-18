@@ -50,7 +50,7 @@
     //     "punctuations":"!'(),-.:;? ",
     //     "phonemes":"iyɨʉɯuɪʏʊeøɘəɵɤoɛœɜɞʌɔæɐaɶɑɒᵻʘɓǀɗǃʄǂɠǁʛpbtdʈɖcɟkɡqɢʔɴŋɲɳnɱmʙrʀⱱɾɽɸβfvθðszʃʒʂʐçʝxɣχʁħʕhɦɬɮʋɹɻjɰlɭʎʟˈˌːˑʍwɥʜʢʡɕʑɺɧɚ˞ɫ"
     // },
-    // LJSpeech espeak phonemes by frequency: "ˈɪətndːsalɹðikzɒɛmˌpwvʊefbhʃɔɐʌuŋɜɡjʒɑθr̩x"
+    // LJSpeech espeak phonemes by frequency: "ˈɪətndːsalɹðikzɒɛmˌpwvʊefbhʃɔɐʌuŋɜɡjʒɑθr̩xɾoæᵻ"
 
     // DISTRIBUTED TRAINING
     "distributed":{
