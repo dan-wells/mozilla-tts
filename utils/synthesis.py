@@ -8,14 +8,14 @@ from .text import text_to_sequence, phoneme_to_sequence, sequence_to_phoneme
 from .text.features import phoneme_to_feature, spe_feature_map
 
 
-def text_to_seqvec(text, CONFIG):
+def text_to_seqvec(text, CONFIG, text_format='text'):
     text_cleaner = [CONFIG.text_cleaner]
     # text ot phonemes to sequence vector
     if CONFIG.use_phonemes:
         tp=CONFIG.characters if 'characters' in CONFIG.keys() else None
         seq = np.asarray(
             phoneme_to_sequence(text, text_cleaner, CONFIG.phoneme_language,
-                                CONFIG.enable_eos_bos_chars, tp),
+                                CONFIG.enable_eos_bos_chars, tp, text_format),
             dtype=np.int32)
         if CONFIG.use_features:
             phonemes = sequence_to_phoneme(seq, tp)
@@ -139,6 +139,7 @@ def synthesis(model,
               enable_eos_bos_chars=False, #pylint: disable=unused-argument
               use_griffin_lim=False,
               do_trim_silence=False,
+              text_format='text',
               backend='torch'):
     """Synthesize voice for the given text.
 
@@ -162,7 +163,7 @@ def synthesis(model,
     if CONFIG.model == "TacotronGST" and style_wav is not None:
         style_mel = compute_style_mel(style_wav, ap)
     # preprocess the given text
-    inputs = text_to_seqvec(text, CONFIG)
+    inputs = text_to_seqvec(text, CONFIG, text_format)
     # pass tensors to backend
     if backend == 'torch':
         speaker_id = id_to_torch(speaker_id)

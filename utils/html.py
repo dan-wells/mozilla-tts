@@ -8,6 +8,7 @@ def make_audio_page(audios, transcripts=None, html_out='audios.html'):
     <!DOCTYPE HTML>
     <html>
     <head>
+    <meta charset="utf-8"/>
     <style type="text/css">
       table {text-align:left;}
       th, td {padding:5px;}
@@ -26,7 +27,7 @@ def make_audio_page(audios, transcripts=None, html_out='audios.html'):
     </body>
     </html>""")
 
-    with open(html_out, 'w') as html:
+    with open(html_out, 'w', encoding='utf-8') as html:
         html.write(html_head)
         html.write(table_head)
         if (type(audios) != list) and (os.path.isdir(audios)):

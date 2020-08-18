@@ -10,6 +10,7 @@ from TTS.utils.synthesis import synthesis
 from TTS.utils.generic_utils import setup_model
 from TTS.utils.html import make_audio_page
 from TTS.utils.io import load_config
+from TTS.utils.text.features import spe_features
 from TTS.utils.text.symbols import make_symbols, symbols, phonemes
 from TTS.utils.audio import AudioProcessor
 
@@ -24,13 +25,15 @@ def tts(model,
         use_cuda,
         batched_vocoder,
         speaker_id=None,
+        text_format='text',
         figures=False):
     t_1 = time.time()
     use_vocoder_model = vocoder_model is not None
     waveform, alignment, _, postnet_output, stop_tokens, _ = synthesis(
         model, text, C, use_cuda, ap, speaker_id, style_wav=False,
         truncated=False, enable_eos_bos_chars=C.enable_eos_bos_chars,
-        use_griffin_lim=(not use_vocoder_model), do_trim_silence=True)
+        use_griffin_lim=(not use_vocoder_model), do_trim_silence=True,
+        text_format=text_format)
 
     if C.model == "Tacotron" and use_vocoder_model:
         postnet_output = ap.out_linear_to_mel(postnet_output.T).T
@@ -97,6 +100,12 @@ if __name__ == "__main__":
         help="target speaker_id if the model is multi-speaker.",
         default=None)
     parser.add_argument(
+        '--text_format',
+        type=str,
+        help="Symbols used for input texts, either `text` or `phoneme`.",
+        choices=["text", "phoneme"],
+        default="text")
+    parser.add_argument(
         '--html_audio_page',
         type=str,
         help="File to write html for playing generated audio files.",
@@ -126,7 +135,12 @@ if __name__ == "__main__":
         num_speakers = 0
 
     # load the model
-    num_chars = len(phonemes) if C.use_phonemes else len(symbols)
+    if C.use_features:
+        num_chars = len(spe_features)
+    elif C.use_phonemes:
+        num_chars = len(phonemes)
+    else:
+        num_chars = len(symbols)
     model = setup_model(num_chars, num_speakers, C)
     cp = torch.load(args.model_path)
     model.load_state_dict(cp['model'])
@@ -176,7 +190,7 @@ if __name__ == "__main__":
         wavs = []
 
     # synthesize voice
-    for text in texts:
+    for n_audio, text in enumerate(texts):
         print(" > Text: {}".format(text))
         _, _, _, wav = tts(model,
                            vocoder_model,
@@ -188,12 +202,16 @@ if __name__ == "__main__":
                            args.use_cuda,
                            args.batched_vocoder,
                            speaker_id=args.speaker_id,
+                           text_format=args.text_format,
                            figures=False)
 
         # save the results
-        file_name = text.replace(" ", "_")
-        file_name = file_name.translate(
-            str.maketrans('', '', string.punctuation.replace('_', ''))) + '.wav'
+        if args.text_format == 'text':
+            file_name = text.replace(" ", "_")
+            file_name = file_name.translate(
+                str.maketrans('', '', string.punctuation.replace('_', ''))) + '.wav'
+        else:
+            file_name = 'SynthAudio{:04d}.wav'.format(n_audio)
         if not os.path.exists(args.out_path):
             os.makedirs(args.out_path)
         out_path = os.path.join(args.out_path, file_name)

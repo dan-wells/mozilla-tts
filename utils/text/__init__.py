@@ -69,7 +69,7 @@ def pad_with_eos_bos(phoneme_sequence, tp=None):
     return [_phonemes_to_id[_bos]] + list(phoneme_sequence) + [_phonemes_to_id[_eos]]
 
 
-def phoneme_to_sequence(text, cleaner_names, language, enable_eos_bos=False, tp=None):
+def phoneme_to_sequence(text, cleaner_names, language, enable_eos_bos=False, tp=None, text_format='text'):
     # pylint: disable=global-statement
     global _phonemes_to_id
     if tp:
@@ -77,13 +77,19 @@ def phoneme_to_sequence(text, cleaner_names, language, enable_eos_bos=False, tp=
         _phonemes_to_id = {s: i for i, s in enumerate(_phonemes)}
 
     sequence = []
-    text = text.replace(":", "")
-    clean_text = _clean_text(text, cleaner_names)
-    to_phonemes = text2phone(clean_text, language)
-    if to_phonemes is None:
-        print("!! After phoneme conversion the result is None. -- {} ".format(clean_text))
+    if text_format == 'text':
+        text = text.replace(":", "")
+        clean_text = _clean_text(text, cleaner_names)
+        to_phonemes = text2phone(clean_text, language)
+        if to_phonemes is None:
+            print("!! After phoneme conversion the result is None. -- {} ".format(clean_text))
+        else:
+            to_phonemes = to_phonemes.split('|')
+    elif text_format == 'phoneme':
+        # we assume no cleaning is required
+        to_phonemes = list(text)
     # iterate by skipping empty strings - NOTE: might be useful to keep it to have a better intonation.
-    for phoneme in filter(None, to_phonemes.split('|')):
+    for phoneme in filter(None, to_phonemes):
         sequence += _phoneme_to_sequence(phoneme)
     # Append EOS char
     if enable_eos_bos:
