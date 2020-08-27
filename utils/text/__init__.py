@@ -4,6 +4,7 @@ import re
 from packaging import version
 import phonemizer
 from phonemizer.phonemize import phonemize
+from TTS.utils.g2p import apply_g2p
 from TTS.utils.text import cleaners
 from TTS.utils.text.symbols import make_symbols, symbols, phonemes, _phoneme_punctuations, _bos, \
     _eos
@@ -69,7 +70,7 @@ def pad_with_eos_bos(phoneme_sequence, tp=None):
     return [_phonemes_to_id[_bos]] + list(phoneme_sequence) + [_phonemes_to_id[_eos]]
 
 
-def phoneme_to_sequence(text, cleaner_names, language, enable_eos_bos=False, tp=None, text_format='text'):
+def phoneme_to_sequence(text, cleaner_names, g2p, enable_eos_bos=False, tp=None, text_format='text'):
     # pylint: disable=global-statement
     global _phonemes_to_id
     if tp:
@@ -80,7 +81,10 @@ def phoneme_to_sequence(text, cleaner_names, language, enable_eos_bos=False, tp=
     if text_format == 'text':
         text = text.replace(":", "")
         clean_text = _clean_text(text, cleaner_names)
-        to_phonemes = text2phone(clean_text, language)
+        if g2p['method'] == 'phonemizer':
+            to_phonemes = text2phone(clean_text, g2p['language'])
+        elif g2p['method'] == 'phonetisaurus':
+            to_phonemes = apply_g2p(clean_text, g2p['model_path'], lexicon=g2p['lexicon'])
         if to_phonemes is None:
             print("!! After phoneme conversion the result is None. -- {} ".format(clean_text))
         else:

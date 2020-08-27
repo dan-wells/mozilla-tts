@@ -172,6 +172,7 @@ class G2PModelTester () :
 
         self.logger.debug ("Applying G2P model...")
 
+        expected_punc = ['_SPACE', '.', '?', '!', ',']
         with open (os.devnull, "w") as devnull :
             proc = subprocess.Popen (
                 g2p_command,
@@ -182,109 +183,24 @@ class G2PModelTester () :
             for line in proc.stdout :
                 parts = re.split (r"\t", line.decode ("utf8").strip ())
                 if not len (parts) == 3 :
-                    self.logger.warning (
-                        u"No pronunciation for word: '{0}'".format (parts [0])
-                    )
-                    continue
+                    if parts[0] in expected_punc:
+                        parts = [parts[0], parts[1], parts[0]]
+                    else:
+                        self.logger.warning (
+                            u"No pronunciation for word: '{0}'".format (parts [0])
+                        )
+                        continue
 
                 yield parts
 
         return
 
-    def applyG2POnly (self, word_list_file) :
-        """Apply the G2P model to a word list.
-
-        Apply the G2P model to a word list.  No filtering or application
-        of a reference lexicon is used here.
-
-        Args:
-            word_list_file (str): The input word list.
-        """
-        for word, score, pron in self.runG2PCommand (word_list_file) :
-            line = u""
-            if self.verbose :
-                line = u"{0}\t{1:.2f}\t{2}".format (
-                    word, float (score), pron
-                )
-            else :
-                line = u"{0}\t{1}".format (word, pron)
-            # py2py3 compatbility,
-            if sys.version_info[0] < 3:
-                print (line.encode ("utf8"))
-            else :
-                print (line)
-
-        return
-
-    def applyG2PWithLexicon (self, word_list_file) :
-        """Apply the G2P model to a word list, combined with lexicon.
-
-        Apply the G2P model to a word list, but combine this with
-        a reference lexicon.  Words for which a reference entry exists
-        will not be sent to the G2P, unless the additional '--greedy'
-        flag is set to True.
-
-        Args:
-            word_list_file (str): The input word list.
-        """
-        target_lexicon = defaultdict (list)
-        tmpwordlist = tempfile.NamedTemporaryFile(mode='w', delete=False)
-
-        #First, find any words in the target list for which we already
-        # have a canonical pronunciation in the reference lexicon.
-        with open (word_list_file, "r") as ifp :
-            for word in ifp :
-                # py2py3 compatbility,
-                if sys.version_info[0] < 3:
-                    word = word.decode ("utf8").strip ()
-                else:
-                    word = word.strip () # already in 'utf8'.
-                if word in self.lexicon :
-                    target_lexicon [word] = [(0.0,pron)
-                                             for pron in self.lexicon [word]]
-                    #In greedy mode we still send words to the G2P, even
-                    # if we have canonical entries in the reference lexicon.
-                    if self.greedy :
-                        print (word.encode ("utf8"), file=tmpwordlist)
-                else :
-                    # py2py3 compatbility,
-                    if sys.version_info[0] < 3:
-                        print (word.encode ("utf8"), file=tmpwordlist)
-                    else:
-                        print (word, file=tmpwordlist)
-        tmpwordlist.close ()
-
-        #Second, iterate through the G2P output, and filter against
-        # any possible duplicates previously found in the reference lexicon.
-        for word, score, pron in self.runG2PCommand (tmpwordlist.name) :
-            prons = set ([p for s,p in target_lexicon [word]])
-            if pron in prons :
-                continue
-            target_lexicon [word].append ((score, pron))
-
-        #Finally, sort everything that is left and print it.
-        for word in sorted (target_lexicon.keys ()) :
-            for score, pron in target_lexicon [word] :
-                line = u""
-                if self.verbose :
-                    line = u"{0}\t{1:.2f}\t{2}".format (
-                        word, float (score), pron
-                    )
-                else :
-                    line = u"{0}\t{1}".format (word, pron)
-                # py2py3 compatbility,
-                if sys.version_info[0] < 3:
-                    print (line.encode ("utf8"))
-                else :
-                    print (line)
-
-        os.unlink (tmpwordlist.name)
-        return
-
     def ApplyG2PModel (self, word_list_file) :
         """Apply the G2P model to a word list.
 
-        Apply the G2P model to a word list.
+        Apply the G2P model to a word list. If a lexicon is provided, return
+        the first pronunciation found for any given input word, otherwise
+        return G2P output.
 
         Args:
             word_list_file (str): The input word list.
@@ -295,17 +211,36 @@ class G2PModelTester () :
            or not os.path.isfile (word_list_file) :
             raise IOError("Word list file not found.")
 
-        if len (self.lexicon) == 0 :
-            self.applyG2POnly (word_list_file)
-        else :
-            self.applyG2PWithLexicon (word_list_file)
+        # TODO: Could send only words not in lexicon to g2p, but would need
+        # to reconstruct original word order from the two lists of prons.
 
-        return
+        # TODO: Some smarter handling of multiple prons, in case lexicon
+        # entries are not sensibly ordered. For example, pass word to g2p
+        # returning n-best hypotheses and pick the highest-scoring alternative
+        # which is also present in the lexicon?
+
+        line = []
+        expected_punc = ['_SPACE', '.', '?', '!', ',']
+
+        for word, score, pron in self.runG2PCommand (word_list_file) :
+            if word in self.lexicon:
+                # take first entry for target word in lexicon, e.g. assuming
+                # lexicon entries are sorted by frequency
+                line += self.lexicon[word][0].split(' ')
+            elif word in expected_punc:
+                # just in case some punc is assigned a pron
+                line += [word]
+            else :
+                line += pron.split(' ')
+
+        line = u"|".join(line).replace("_SPACE", " ").strip(" |")
+        # return None if empty string for compatibility with TTS.utils.text.text2phone
+        return line if line else None
 
 if __name__ == "__main__" :
     import sys, argparse
 
-    example = "{0} --model train/model.fst --word test".format (sys.argv [0])
+    example = "{0} --model train/model.fst --word_list word.list".format (sys.argv [0])
 
     parser  = argparse.ArgumentParser (description=example)
     parser.add_argument ("--model", "-m", help="Phonetisaurus G2P fst model.",

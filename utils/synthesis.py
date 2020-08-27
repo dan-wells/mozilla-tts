@@ -14,7 +14,7 @@ def text_to_seqvec(text, CONFIG, text_format='text'):
     if CONFIG.use_phonemes:
         tp=CONFIG.characters if 'characters' in CONFIG.keys() else None
         seq = np.asarray(
-            phoneme_to_sequence(text, text_cleaner, CONFIG.phoneme_language,
+            phoneme_to_sequence(text, text_cleaner, CONFIG.g2p,
                                 CONFIG.enable_eos_bos_chars, tp, text_format),
             dtype=np.int32)
         if CONFIG.use_features:

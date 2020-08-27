@@ -23,7 +23,7 @@ class MyDataset(Dataset):
                  max_seq_len=float("inf"),
                  use_phonemes=True,
                  phoneme_cache_path=None,
-                 phoneme_language="en-us",
+                 g2p={"method": "phonemizer", "language": "en-us"},
                  use_features=False,
                  enable_eos_bos=False,
                  verbose=False):
@@ -41,8 +41,7 @@ class MyDataset(Dataset):
             max_seq_len (int): (float("inf")) maximum sequence length.
             use_phonemes (bool): (true) if true, text converted to phonemes.
             phoneme_cache_path (str): path to cache phoneme features.
-            phoneme_language (str): one the languages from
-                https://github.com/bootphon/phonemizer#languages
+            g2p (dict): configuration for g2p method, default phonemizer for en-us
             use_features (bool): (false) if true, text converted to phonological features.
             enable_eos_bos (bool): enable end of sentence and beginning of sentences characters.
             verbose (bool): print diagnostic information.
@@ -59,7 +58,7 @@ class MyDataset(Dataset):
         self.tp = tp
         self.use_phonemes = use_phonemes
         self.phoneme_cache_path = phoneme_cache_path
-        self.phoneme_language = phoneme_language
+        self.g2p = g2p
         self.use_features = use_features
         self.enable_eos_bos = enable_eos_bos
         self.verbose = verbose
@@ -69,7 +68,11 @@ class MyDataset(Dataset):
             print("\n > DataLoader initialization")
             print(" | > Use phonemes: {}".format(self.use_phonemes))
             if use_phonemes:
-                print("   | > phoneme language: {}".format(phoneme_language))
+                print("   | > G2P method: {}".format(g2p['method']))
+                if g2p['method'] == 'phonemizer':
+                    print("   | > phoneme language: {}".format(g2p['language']))
+                elif g2p['method'] == 'phonetisaurus':
+                    print("   | > lexicon: {}".format(g2p['lexicon']))
             print(" | > Use features: {}".format(self.use_features))
             if use_features:
                 print("   | > feature dimension: {}".format(len(SPEFeatures._fields)))
@@ -91,7 +94,7 @@ class MyDataset(Dataset):
         eos chars here. Instead we add those dynamically later; based on the
         config option."""
         phonemes = phoneme_to_sequence(text, [self.cleaners],
-                                       language=self.phoneme_language,
+                                       g2p=self.g2p,
                                        enable_eos_bos=False,
                                        tp=self.tp)
         phonemes = np.asarray(phonemes, dtype=np.int32)

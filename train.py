@@ -17,6 +17,7 @@ from TTS.utils.audio import AudioProcessor
 from TTS.utils.generic_utils import (count_parameters, create_experiment_folder, remove_experiment_folder,
                                      get_git_branch, set_init_dict,
                                      setup_model, KeepAverage, check_config)
+from TTS.utils.g2p import train_g2p
 from TTS.utils.io import (save_best_model, save_checkpoint,
                           load_config, copy_config_file)
 from TTS.utils.training import (NoamLR, check_update, adam_weight_decay,
@@ -58,7 +59,7 @@ def setup_loader(ap, r, is_val=False, verbose=False):
             max_seq_len=c.max_seq_len,
             phoneme_cache_path=c.phoneme_cache_path,
             use_phonemes=c.use_phonemes,
-            phoneme_language=c.phoneme_language,
+            g2p=c.g2p,
             use_features=c.use_features,
             enable_eos_bos=c.enable_eos_bos_chars,
             verbose=verbose)
@@ -522,6 +523,7 @@ def main(args):  # pylint: disable=redefined-outer-name
     if num_gpus > 1:
         init_distributed(args.rank, num_gpus, args.group_id,
                          c.distributed["backend"], c.distributed["url"])
+
     # use_features requires use_phonemes, but features dim should
     # take precedence
     if c.use_features:
@@ -530,6 +532,17 @@ def main(args):  # pylint: disable=redefined-outer-name
         num_chars = len(phonemes)
     else:
         num_chars = len(symbols)
+
+    # set up g2p
+    if c.g2p['method'] == 'phonetisaurus':
+        c.g2p['model_path'] = os.path.join(c.g2p['train_dir'], "{}.fst".format(c.g2p['model_prefix']))
+        if not os.path.isfile(c.g2p['model_path']):
+            print(" > Training G2P model...")
+            print(" | > Using lexicon: {}".format(c.g2p['lexicon']))
+            print(" | > Saving model: {}".format(c.g2p['model_path']))
+            train_g2p(c.g2p['lexicon'], c.g2p['model_prefix'], c.g2p['train_dir'])
+        else:
+            print(" > Using existing G2P model: {}".format(c.g2p['model_path']))
 
     # load data instances
     meta_data_train, meta_data_eval = load_meta_data(c.datasets)

@@ -8,6 +8,7 @@ import string
 
 from TTS.utils.synthesis import synthesis
 from TTS.utils.generic_utils import setup_model
+from TTS.utils.g2p import train_g2p
 from TTS.utils.html import make_audio_page
 from TTS.utils.io import load_config
 from TTS.utils.text.features import spe_features
@@ -141,6 +142,8 @@ if __name__ == "__main__":
         num_chars = len(phonemes)
     else:
         num_chars = len(symbols)
+    if C.g2p['method'] == 'phonetisaurus':
+        C.g2p['model_path'] = os.path.join(C.g2p['train_dir'], "{}.fst".format(C.g2p['model_prefix']))
     model = setup_model(num_chars, num_speakers, C)
     cp = torch.load(args.model_path)
     model.load_state_dict(cp['model'])
