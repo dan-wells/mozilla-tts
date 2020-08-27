@@ -195,4 +195,8 @@ def _should_keep_symbol(s):
 
 
 def _should_keep_phoneme(p):
-    return p in _phonemes_to_id and p not in ['~', '^', '_']
+    keep = p in _phonemes_to_id and p not in ['~', '^', '_']
+    # don't silently skip phonemes in input!
+    if not p in _phonemes_to_id:
+        print(" > WARNING: ignoring unknown phoneme symbol /{}/ ".format(p))
+    return keep
