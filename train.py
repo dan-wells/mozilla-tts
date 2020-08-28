@@ -17,7 +17,7 @@ from TTS.utils.audio import AudioProcessor
 from TTS.utils.generic_utils import (count_parameters, create_experiment_folder, remove_experiment_folder,
                                      get_git_branch, set_init_dict,
                                      setup_model, KeepAverage, check_config)
-from TTS.utils.g2p import train_g2p
+from TTS.utils.g2p import load_g2p, train_g2p
 from TTS.utils.io import (save_best_model, save_checkpoint,
                           load_config, copy_config_file)
 from TTS.utils.training import (NoamLR, check_update, adam_weight_decay,
@@ -543,6 +543,7 @@ def main(args):  # pylint: disable=redefined-outer-name
             train_g2p(c.g2p['lexicon'], c.g2p['model_prefix'], c.g2p['train_dir'])
         else:
             print(" > Using existing G2P model: {}".format(c.g2p['model_path']))
+        c.g2p['g2p_tester'] = load_g2p(c.g2p['model_path'], lexicon=c.g2p['lexicon'])
 
     # load data instances
     meta_data_train, meta_data_eval = load_meta_data(c.datasets)

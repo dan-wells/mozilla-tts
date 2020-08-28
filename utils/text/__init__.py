@@ -84,7 +84,7 @@ def phoneme_to_sequence(text, cleaner_names, g2p, enable_eos_bos=False, tp=None,
         if g2p['method'] == 'phonemizer':
             to_phonemes = text2phone(clean_text, g2p['language'])
         elif g2p['method'] == 'phonetisaurus':
-            to_phonemes = apply_g2p(clean_text, g2p['model_path'], lexicon=g2p['lexicon'])
+            to_phonemes = apply_g2p(clean_text, g2p['g2p_tester'])
         if to_phonemes is None:
             print("!! After phoneme conversion the result is None. -- {} ".format(clean_text))
         else:

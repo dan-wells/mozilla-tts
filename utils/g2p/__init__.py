@@ -18,15 +18,25 @@ def train_g2p(lexicon_file, model_out, g2p_dir):
                               dir_prefix=g2p_dir, seq2_del=True)
     trainer.TrainG2PModel()
 
-def apply_g2p(text, model, lexicon=None):
-    """Apply trained G2P model to text.
+
+def load_g2p(model, lexicon=None):
+    """Load trained G2P model from file.
 
     Args:
-        text (str): Words to convert to phonemes.
         model (str): Path to trained Phonetisaurus FST.
         lexicon (str): Path to optional reference lexicon.
     """
     tester = G2PModelTester(model, lexicon=lexicon) 
+    return tester
+
+
+def apply_g2p(text, tester):
+    """Apply trained G2P model to text.
+
+    Args:
+        text (str): Words to convert to phonemes.
+        model (obj): G2PModelTester object.
+    """
     expected_punc = ['.', '?', '!', ',']
     # Phonetisaurus expects input from files one word per line
     with tempfile.NamedTemporaryFile(mode='w') as word_list:
