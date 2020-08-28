@@ -275,6 +275,36 @@ def train(model, criterion, optimizer, optimizer_st, scheduler,
 
                 tb_logger.tb_train_figures(global_step, figures)
 
+                # Log input embeddings
+                embedding_tag = 'input_embeddings'
+                if c.tb_save_all_embeddings:
+                    embedding_tag += '_{}'.format(global_step)
+                if c.use_features:
+                    if c.tb_plot_all_phones:
+                        embedding_inputs = spe_feature_map.keys()
+                    else:
+                        # /ɚ/ is mapped to /@r/ sequence in spe_feature_map
+                        embedding_inputs = [i for i in phonemes if i in spe_feature_map and i != 'ɚ']
+                    # TODO: put all inputs into a single tensor and run a single forward pass
+                    embeddings = []
+                    for phone in embedding_inputs:
+                        spe_tensor = torch.FloatTensor(spe_feature_map[phone])
+                        spe_tensor = spe_tensor.reshape(1, len(spe_features), 1)
+                        if use_cuda:
+                            spe_tensor = spe_tensor.cuda(non_blocking=True)
+                        embedding = model.embedding.forward(spe_tensor).squeeze()
+                        embedding = embedding.detach().cpu().numpy()
+                        embeddings.append(embedding)
+                        #print('Embedding /{}/: {}'.format(k, embedding[:4]))
+                else:
+                    # otherwise can just rely on weight indices matching input unit lists
+                    if c.use_phonemes:
+                        embedding_inputs = phonemes
+                    else:
+                        embedding_inputs = symbols
+                    embeddings = model.embedding.weight
+                tb_logger.tb_input_embedding(embedding_tag, embeddings, embedding_inputs, 'projector')
+
                 # Sample audio
                 if c.model in ["Tacotron", "TacotronGST"]:
                     train_audio = ap.inv_spectrogram(const_spec.T)
@@ -426,36 +456,6 @@ def evaluate(model, criterion, ap, global_step, epoch):
                 epoch_stats['guided_attention_loss'] = keep_avg['avg_ga_loss']
             tb_logger.tb_eval_stats(global_step, epoch_stats)
             tb_logger.tb_eval_figures(global_step, eval_figures)
-
-            # Log input embeddings
-            embedding_tag = 'input_embeddings'
-            if c.tb_save_all_embeddings:
-                embedding_tag += '_{}'.format(global_step)
-            if c.use_features:
-                if c.tb_plot_all_phones:
-                    embedding_inputs = spe_feature_map.keys()
-                else:
-                    # /ɚ/ is mapped to /@r/ sequence in spe_feature_map
-                    embedding_inputs = [i for i in phonemes if i in spe_feature_map and i != 'ɚ']
-                # TODO: put all inputs into a single tensor and run a single forward pass
-                embeddings = []
-                for phone in embedding_inputs:
-                    spe_tensor = torch.FloatTensor(spe_feature_map[phone])
-                    spe_tensor = spe_tensor.reshape(1, len(spe_features), 1)
-                    if use_cuda:
-                        spe_tensor = spe_tensor.cuda(non_blocking=True)
-                    embedding = model.embedding.forward(spe_tensor).squeeze()
-                    embedding = embedding.detach().cpu().numpy()
-                    embeddings.append(embedding)
-                    #print('Embedding /{}/: {}'.format(k, embedding[:4]))
-            else:
-                # otherwise can just rely on weight indices matching input unit lists
-                if c.use_phonemes:
-                    embedding_inputs = phonemes
-                else:
-                    embedding_inputs = symbols
-                embeddings = model.embedding.weight
-            tb_logger.tb_input_embedding(embedding_tag, embeddings, embedding_inputs, 'projector')
 
     if args.rank == 0 and epoch > c.test_delay_epochs:
         if c.test_sentences_file is None:
