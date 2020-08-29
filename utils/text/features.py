@@ -5,9 +5,19 @@ Define mappings from phonemes to SPE-style binary phonological feature vectors.
 
 from collections import namedtuple
 
+# TODO: Consider adding support for diacritic feature vectors, e.g.
+#   - velarization = [+high, +back]
+#   - nasalization = [+nasal]
+#   - aspiration = [+subglottal_pressure]
+# Need to be able to add feature vectors so that result gives union of
+# specified feature values. Default value for all other features in diacritic
+# vectors should be set to 0. Then could be nicer to start handling things from
+# multi-character plain ASCII symbols, rather than worry about fiddly IPA
+# diacritic encoding.
+
 spe_features = [
-        'consonantal', 'sonorant', 'vocalic', 'round', 'coronal', 'anterior',
-        'high', 'low', 'front', 'back', 'tense', 'voice', 'spread_glottis',
+        'consonantal', 'sonorant', 'syllabic', 'round', 'coronal', 'anterior',
+        'high', 'low', 'front', 'back', 'tense', 'voice', 'subglottal_pressure',
         'constricted_glottis', 'continuant', 'strident', 'lateral',
         'delayed_release', 'nasal', 'space', 'eos', 'question', 'excl', 'punc'
         ]
@@ -51,20 +61,24 @@ spe_feature_map = {
         'ʁ': SPEFeatures(1,0,0,0,0,0,0,0,0,1,0,1,0,0,1,1,0,0,0,0,0,0,0,0),
         'ħ': SPEFeatures(1,0,0,0,0,0,0,1,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0),
         'ʕ': SPEFeatures(1,0,0,0,0,0,0,1,0,1,0,1,0,0,1,0,0,0,0,0,0,0,0,0),
-        'h': SPEFeatures(0,0,0,0,0,0,0,1,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0),
-        'ɦ': SPEFeatures(0,0,0,0,0,0,0,1,0,0,0,1,1,0,1,0,0,0,0,0,0,0,0,0),
+        'h': SPEFeatures(0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0),
+        'ɦ': SPEFeatures(0,0,0,0,0,0,0,1,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0),
         'ʔ': SPEFeatures(0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0),
         'm': SPEFeatures(1,1,0,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0),
+        'ṃ': SPEFeatures(1,1,1,0,0,1,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0),
         'n': SPEFeatures(1,1,0,0,1,1,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0),
+        'ṇ': SPEFeatures(1,1,1,0,1,1,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0),
         'ŋ': SPEFeatures(1,1,0,0,0,0,1,0,0,1,0,1,0,0,0,0,0,0,1,0,0,0,0,0),
         'ɲ': SPEFeatures(1,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0),
         'ɴ': SPEFeatures(1,1,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,1,0,0,0,0,0),
         'l': SPEFeatures(1,1,0,0,1,1,0,0,0,0,0,1,0,0,1,0,1,0,0,0,0,0,0,0),
+        'ḷ': SPEFeatures(1,1,1,0,1,1,0,0,0,0,0,1,0,0,1,0,1,0,0,0,0,0,0,0),
+        'ɫ': SPEFeatures(1,1,0,0,1,1,1,0,0,1,0,1,0,0,1,0,1,0,0,0,0,0,0,0),
         'ʎ': SPEFeatures(1,1,0,0,0,0,1,0,0,0,0,1,0,0,1,0,1,0,0,0,0,0,0,0),
-        'r': SPEFeatures(1,1,0,0,1,1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0),
-        'ɹ': SPEFeatures(1,1,0,0,1,1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0),
-        'ɾ': SPEFeatures(1,1,0,0,1,1,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0),
-        'ʀ': SPEFeatures(1,1,0,0,0,0,0,0,0,1,0,1,0,0,1,0,0,0,0,0,0,0,0,0),
+        'r': SPEFeatures(1,1,0,0,1,0,0,0,0,0,0,1,1,0,1,0,0,0,0,0,0,0,0,0),
+        'ɹ': SPEFeatures(1,1,0,0,1,0,0,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0),
+        'ɾ': SPEFeatures(1,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0),
+        'ʀ': SPEFeatures(1,1,0,0,0,0,0,0,0,1,0,1,1,0,1,0,0,0,0,0,0,0,0,0),
         'j': SPEFeatures(0,1,0,0,0,0,1,0,0,0,0,1,0,0,1,0,0,0,0,0,0,0,0,0),
         'w': SPEFeatures(0,1,0,1,0,0,1,0,0,1,0,1,0,0,1,0,0,0,0,0,0,0,0,0),
         'ʍ': SPEFeatures(0,1,0,1,0,0,1,0,0,1,0,0,0,0,1,0,0,0,0,0,0,0,0,0),
