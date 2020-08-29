@@ -129,7 +129,8 @@
     "g2p":{
         "method": "phonemizer",  // either phonemizer or phonetisaurus
         "language": "en-us",  // language flag for phonemizer, pick one from  https://github.com/bootphon/phonemizer#languages
-        "lexicon": "",  // lexicon to train Phonetisaurus model and use for reference pronunciations
+        "lexicon": "",  // lexicon to train Phonetisaurus model and use for reference pronunciations. Choose from available preprocessors in TTS.utils.g2p.lexicon
+        "lexicon_path": "" // path to lexicon file
         "model_prefix": "",  // filename prefix for trained Phonetisaurus model = prefix.fst
         "train_dir": ""  // directory to save Phonetisaurus model and training files
     },

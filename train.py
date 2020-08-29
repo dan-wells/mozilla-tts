@@ -18,6 +18,7 @@ from TTS.utils.generic_utils import (count_parameters, create_experiment_folder,
                                      get_git_branch, set_init_dict,
                                      setup_model, KeepAverage, check_config)
 from TTS.utils.g2p import load_g2p, train_g2p
+from TTS.utils.g2p.lexicon import preprocess_lexicon
 from TTS.utils.io import (save_best_model, save_checkpoint,
                           load_config, copy_config_file)
 from TTS.utils.training import (NoamLR, check_update, adam_weight_decay,
@@ -535,15 +536,17 @@ def main(args):  # pylint: disable=redefined-outer-name
 
     # set up g2p
     if c.g2p['method'] == 'phonetisaurus':
+        # preprocess lexicon to standard format (also updates c.g2p['lexicon_path'])
+        preprocess_lexicon(c.g2p)
         c.g2p['model_path'] = os.path.join(c.g2p['train_dir'], "{}.fst".format(c.g2p['model_prefix']))
         if not os.path.isfile(c.g2p['model_path']):
             print(" > Training G2P model...")
             print(" | > Using lexicon: {}".format(c.g2p['lexicon']))
-            print(" | > Saving model: {}".format(c.g2p['model_path']))
-            train_g2p(c.g2p['lexicon'], c.g2p['model_prefix'], c.g2p['train_dir'])
+            train_g2p(c.g2p['lexicon_path'], c.g2p['model_prefix'], c.g2p['train_dir'])
+            print(" | > Saved model: {}".format(c.g2p['model_path']))
         else:
             print(" > Using existing G2P model: {}".format(c.g2p['model_path']))
-        c.g2p['g2p_tester'] = load_g2p(c.g2p['model_path'], lexicon=c.g2p['lexicon'])
+        c.g2p['g2p_tester'] = load_g2p(c.g2p['model_path'], lexicon=c.g2p['lexicon_path'])
 
     # load data instances
     meta_data_train, meta_data_eval = load_meta_data(c.datasets)

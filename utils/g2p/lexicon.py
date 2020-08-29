@@ -1,8 +1,29 @@
 # -*- coding: utf-8 -*-
 
 import locale
+import os
 import re
+import sys
 from collections import defaultdict
+
+def preprocess_lexicon(g2p_config):
+    lex_in = g2p_config['lexicon_path']
+    lex_out = os.path.join(g2p_config['train_dir'], os.path.basename(lex_in))
+    preprocessor = get_lexicon_preprocessor_by_name(g2p_config['lexicon'])
+    phonemap = get_lexicon_phonemap_by_name(g2p_config['lexicon'])
+    if not os.path.isfile(lex_out):
+        preprocessor(lex_in, lex_out, phonemap)
+    g2p_config['lexicon_path'] = lex_out
+
+def get_lexicon_preprocessor_by_name(name):
+    """Returns the respective preprocessing function."""
+    thismodule = sys.modules[__name__]
+    return getattr(thismodule, "preprocess_{}".format(name.lower()))
+
+def get_lexicon_phonemap_by_name(name):
+    """Returns the respective lexicon-to-IPA symbol map."""
+    thismodule = sys.modules[__name__]
+    return getattr(thismodule, "{}_to_ipa".format(name.lower()))
 
 # set of phonemes used in Mary TTS German lexicon, excluding length markers
 marytts_de_phonemes = [
