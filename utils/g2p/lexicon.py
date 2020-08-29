@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 import locale
 import re
 from collections import defaultdict
@@ -34,6 +36,85 @@ def preprocess_marytts_de(lex_in, lex_out, phone_map):
             pron = re.sub(strip_chars, '', pron)
             pron = re.sub(multi_space, ' ', pron)
             pron = pron.strip()
+            pron = ' '.join(phone_map[p] for p in pron.split(' '))
+            outf.write("{}\t{}\n".format(word, pron))
+
+# set of phonemes used in Combilex surface lexicons
+combilex_phonemes = [
+    'A', 'a', 'aI', 'aU', 'E', 'eI', 'E@', '@U', 'Q', 'O', 'OI', '3', '@', 'I',
+    'i', 'I@', 'U', 'V', 'u', 'U@', 'N', 'T', 'D', 'S', 'Z', 'tS', 'dZ', 'm=',
+    'n=', 'l=', 'e~', 'o~', 'j', 'w', '4', '5', 'b', 'd', 'f', 'g', 'h', 'k',
+    'l', 'm', 'n', 'p', 'r', 's', 't', 'v', 'z'
+]
+
+combilex_to_ipa = {
+    'A':'ɑ', 'a':'a', 'aI':'aɪ', 'aU':'aʊ', 'E':'ɛ', 'eI':'eɪ', 'E@':'ɛə',
+    '@U':'əʊ', 'Q':'ɒ', 'O':'ɔ', 'OI':'ɔɪ', '3':'ɜ', '@':'ə', 'I':'ɪ', 'i':'i',
+    'I@':'ɪə', 'U':'ʊ', 'V':'ʌ', 'u':'u', 'U@':'ʊə', 'N':'ŋ', 'T':'θ', 'D':'ð',
+    'S':'ʃ', 'Z':'ʒ', 'tS':'tʃ', 'dZ':'dʒ', 'm=':'ṃ', 'n=':'ṇ', 'l=':'ḷ',
+    'e~':'ẽ', 'o~':'õ', 'j':'j', 'w':'w', '4':'ɾ', '5':'ɫ', 'b':'b', 'd':'d',
+    'f':'f', 'g':'ɡ', 'h':'h', 'k':'k', 'l':'l', 'm':'m', 'n':'n', 'p':'p',
+    'r':'ɹ', 's':'s', 't':'t', 'v':'v', 'z':'z'
+}
+
+def parse_combilex_entry(line):
+    """Parse Combilex entry and make named fields available."""
+    combilexEntryFields_re = re.compile( r"""^(?P<hw>[^:]+):
+                                              (?P<sense>[0-9]+):
+                                              (?P<pos>[A-Z$/|]*):
+                                              (?P<variant>[^:]*):
+                                              (?P<pron>[^:]+):
+                                              (?P<table>[a-z/]+):
+                                              (?P<word_id>[0-9-]+):
+                                              (?P<strength>[sw]?):
+                                              (?P<pron_id>[0-9-]*):
+                                              (?P<ref_id>[^:]*):
+                                              (?P<derivation>[^:]*):
+                                              (?P<lang>[a-z/]*):
+                                              (?P<semantics>[^:]*):
+                                              (?P<domain>[^:]*):
+                                              (?P<fname>[y]?):
+                                              (?P<fname_gender>[m/f]*):
+                                              (?P<sname>[y]?):
+                                              (?P<sname_gender>[m/f]*):
+                                              (?P<country>(?:[A-Z][A-Z]/?)*):
+                                              (?P<place_region>[^:]*):
+                                              (?P<place_type>[^:]*)$""", re.VERBOSE )
+    return combilexEntryFields_re.search( line )
+
+def strip_combilex(pronstr):
+    """Strip everything but phones from Combilex pron string."""
+    strippat1 = re.compile( r'(?: [0+]_[^ ]+)|_[^ ]+|[<{>}]', re.UNICODE )
+    strippat2 = re.compile( r',' )
+    strippat3 = re.compile( r' # ' )
+    strippat4 = re.compile( r' \. ' )
+    strippat5 = re.compile( r' ?["%] ' )
+    strippat6 = re.compile( r'`' ) # rhoticity marker always redundant with following /r/
+    strippat7 = re.compile( r'0' ) # considered 'not redundant', but don't want them
+    spacesqueezepat = re.compile( r' +' )
+
+    pron =   strippat1.sub( '', pronstr )
+    pron =   strippat2.sub( ' ', pron )
+    pron =   strippat3.sub( ' ', pron )
+    pron =   strippat4.sub( ' ', pron )
+    pron =   strippat5.sub( ' ', pron )
+    pron =   strippat6.sub( '', pron )
+    pron =   strippat7.sub( '', pron )
+    cleanpron =   spacesqueezepat.sub( ' ', pron )
+
+    return cleanpron.strip()
+
+def preprocess_combilex(lex_in, lex_out, phone_map):
+    """Convert Combilex lexicon file to standard format."""
+    with open(lex_in) as inf, open(lex_out, 'w') as outf:
+        for line in inf:
+            entry = parse_combilex_entry(line)
+            word = entry.group('hw')
+            # skip multi-word entries, generally both words are also listed separately
+            if ' ' in word:
+                continue
+            pron = entry.group('pron')
+            pron = strip_combilex(pron)
             pron = ' '.join(phone_map[p] for p in pron.split(' '))
             outf.write("{}\t{}\n".format(word, pron))
 

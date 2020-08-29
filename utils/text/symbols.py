@@ -28,7 +28,7 @@ _phoneme_punctuations = '.!;:,?'
 # Phonemes definition
 _vowels = 'iyɨʉɯuɪʏʊeøɘəɵɤoɛœɜɞʌɔæɐaɶɑɒᵻãẽõ'
 _non_pulmonic_consonants = 'ʘɓǀɗǃʄǂɠǁʛ'
-_pulmonic_consonants = 'pbtdʈɖcɟkɡqɢʔɴŋɲɳnɱmʙrʀⱱɾɽɸβfvθðszʃʒʂʐçʝxɣχʁħʕhɦɬɮʋɹɻjɰlɭʎʟ'
+_pulmonic_consonants = 'pbtdʈɖcɟkɡqɢʔɴŋɲɳnɱmʙrʀⱱɾɽɸβfvθðszʃʒʂʐçʝxɣχʁħʕhɦɬɮʋɹɻjɰlɭʎʟṃṇḷ'
 _suprasegmentals = 'ˈˌːˑ'
 _other_symbols = 'ʍwɥʜʢʡɕʑɺɧ'
 _diacrilics = 'ɚ˞ɫ'
