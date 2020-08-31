@@ -9,7 +9,7 @@ from collections import defaultdict
 def preprocess_lexicon(g2p_config):
     lex_in = g2p_config['lexicon_path']
     train_dir = g2p_config['train_dir']
-    lex_out = os.path.join(train_dir, os.path.basename(lex_in))
+    lex_out = os.path.join(train_dir, '{}.lex'.format(g2p['model_prefix']))
     preprocessor = get_lexicon_preprocessor_by_name(g2p_config['lexicon'])
     phonemap = get_lexicon_phonemap_by_name(g2p_config['lexicon'])
     if not os.path.exists(train_dir):
