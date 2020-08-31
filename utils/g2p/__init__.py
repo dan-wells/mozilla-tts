@@ -44,7 +44,7 @@ def apply_g2p(text, tester):
             if c in expected_punc:
                 word_list.write("\n{}\n".format(c))
             elif c == ' ':
-                word_list.write("\n{}\n".format("_SPACE"))
+                word_list.write("\n{}\n".format(".space"))
             else:
                 word_list.write(c)
         word_list.seek(0)

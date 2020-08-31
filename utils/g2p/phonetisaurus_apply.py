@@ -220,7 +220,7 @@ class G2PModelTester () :
         # which is also present in the lexicon?
 
         line = []
-        expected_punc = ['_SPACE', '.', '?', '!', ',']
+        expected_punc = ['.space', '.', '?', '!', ',']
 
         for word, score, pron in self.runG2PCommand (word_list_file) :
             if word in self.lexicon:
@@ -233,7 +233,7 @@ class G2PModelTester () :
             else :
                 line += pron.split(' ')
 
-        line = u"|".join(line).replace("_SPACE", " ").strip(" |")
+        line = u"|".join(line).replace(".space", " ").strip(" |")
         # return None if empty string for compatibility with TTS.utils.text.text2phone
         return line if line else None
 
