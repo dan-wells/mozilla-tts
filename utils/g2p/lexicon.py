@@ -8,11 +8,13 @@ from collections import defaultdict
 
 def preprocess_lexicon(g2p_config):
     lex_in = g2p_config['lexicon_path']
-    lex_out = os.path.join(g2p_config['train_dir'], os.path.basename(lex_in))
+    train_dir = g2p_config['train_dir']
+    lex_out = os.path.join(train_dir, os.path.basename(lex_in))
     preprocessor = get_lexicon_preprocessor_by_name(g2p_config['lexicon'])
     phonemap = get_lexicon_phonemap_by_name(g2p_config['lexicon'])
-    if not os.path.isfile(lex_out):
-        preprocessor(lex_in, lex_out, phonemap)
+    if not os.path.exists(train_dir):
+        os.makedirs(train_dir)
+    preprocessor(lex_in, lex_out, phonemap)
     g2p_config['lexicon_path'] = lex_out
 
 def get_lexicon_preprocessor_by_name(name):
