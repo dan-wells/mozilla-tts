@@ -39,7 +39,7 @@ marytts_de_to_ipa = {
     "aU":"aʊ", "b":"b", "C":"ç", "d":"d", "D":"ð", "e":"e", "e~":"ẽ", "E":"ɛ",
     "EI":"ɛɪ", "f":"f", "g":"ɡ", "h":"h", "i":"i", "I":"ɪ", "j":"j", "k":"k",
     "l":"l", "m":"m", "n":"n", "N":"ŋ", "o":"o", "o~":"õ", "O":"ɔ", "OY":"ɔʏ",
-    "p":"p", "pf":"pf", "r":"r", "R":"ʀ", "s":"s", "S":"ʃ", "t":"t", "T":"θ",
+    "p":"p", "pf":"pf", "r":"ɹ", "R":"ʀ", "s":"s", "S":"ʃ", "t":"t", "T":"θ",
     "ts":"ts", "tS":"tʃ", "u":"u", "U":"ʊ", "v":"v", "w":"w", "x":"x", "y":"y",
     "Y":"ʏ", "z":"z", "Z":"ʒ"
 }
@@ -56,6 +56,9 @@ def preprocess_marytts_de(lex_in, lex_out, phone_map):
                 continue
             word, pron = line.strip().split('|')
             word = word.lower()
+            # some abbreviations tend to confuse g2p training
+            if word.endswith("'"):
+                word = word.strip("'")
             pron = re.sub(strip_chars, '', pron)
             pron = re.sub(multi_space, ' ', pron)
             pron = pron.strip()
