@@ -172,7 +172,7 @@ class G2PModelTester () :
 
         self.logger.debug ("Applying G2P model...")
 
-        expected_punc = ['_SPACE', '.', '?', '!', ',']
+        expected_punc = ['.space', '.', '?', '!', ',']
         with open (os.devnull, "w") as devnull :
             proc = subprocess.Popen (
                 g2p_command,
