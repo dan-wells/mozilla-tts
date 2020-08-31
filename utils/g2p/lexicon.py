@@ -136,6 +136,7 @@ def preprocess_combilex(lex_in, lex_out, phone_map):
         for line in inf:
             entry = parse_combilex_entry(line)
             word = entry.group('hw')
+            word = word.lower()
             # skip multi-word entries, generally both words are also listed separately
             if ' ' in word:
                 continue

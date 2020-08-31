@@ -38,6 +38,21 @@ _abbreviations = [(re.compile('\\b%s\\.' % x[0], re.IGNORECASE), x[1])
                       ('ltd', 'limited'),
                       ('col', 'colonel'),
                       ('ft', 'fort'),
+                      ('bbl', 'b b l'),
+                      ('cia', 'c i a'),
+                      ('fbi', 'f b i'),
+                      ('fpcc', 'f p c c'),
+                      ('ll', 'l l'),
+                      ('mss', 'm s s'),
+                      ('mvd', 'm v d'),
+                      ('prs', 'p r s'),
+                      ('sac', 's a c'),
+                      ('tv', 't v'),
+                      ('us', 'u s'),
+                      ('usa', 'u s a'),
+                      ('ussr', 'u s s r'),
+                      ('uv', 'u v'),
+                      ('wdsu', 'w d s u'),
                   ]]
 
 
