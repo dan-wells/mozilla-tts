@@ -9,7 +9,7 @@ from collections import defaultdict
 def preprocess_lexicon(g2p_config):
     lex_in = g2p_config['lexicon_path']
     train_dir = g2p_config['train_dir']
-    lex_out = os.path.join(train_dir, '{}.lex'.format(g2p['model_prefix']))
+    lex_out = os.path.join(train_dir, '{}.lex'.format(g2p_config['model_prefix']))
     preprocessor = get_lexicon_preprocessor_by_name(g2p_config['lexicon'])
     phonemap = get_lexicon_phonemap_by_name(g2p_config['lexicon'])
     if not os.path.exists(train_dir):
@@ -34,7 +34,7 @@ marytts_de_phonemes = [
     "o~", "O", "OY", "p", "pf", "r", "R", "s", "S", "t", "T", "ts", "tS", "u",
     "U", "v", "w", "x", "y", "Y", "z", "Z"
 ]
-marytts_de_to_ipa = { 
+marytts_de_to_ipa = {
     "@":"ə", "2":"ø", "6":"ɐ", "9":"œ", "a":"a", "a~":"ã", "aI":"aɪ",
     "aU":"aʊ", "b":"b", "C":"ç", "d":"d", "D":"ð", "e":"e", "e~":"ẽ", "E":"ɛ",
     "EI":"ɛɪ", "f":"f", "g":"ɡ", "h":"h", "i":"i", "I":"ɪ", "j":"j", "k":"k",
