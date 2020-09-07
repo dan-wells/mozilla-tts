@@ -185,7 +185,11 @@ class G2PModelTester () :
                 if not len (parts) == 3 :
                     if parts[0] in expected_punc:
                         parts = [parts[0], parts[1], parts[0]]
+                    elif parts[0] in self.lexicon:
+                        parts = [parts[0], parts[1], self.lexicon[parts[0]][0]]
                     else:
+                        # this should usually mean OOV input symbol, but could
+                        # also just be null pron prediction, hence lexicon check
                         self.logger.warning (
                             u"No pronunciation for word: '{0}'".format (parts [0])
                         )
@@ -219,15 +223,14 @@ class G2PModelTester () :
         # returning n-best hypotheses and pick the highest-scoring alternative
         # which is also present in the lexicon?
 
+        # TODO: Try and speed this up (might only be possible by batching
+        # input lines elsewhere)
+
         line = []
         expected_punc = ['.space', '.', '?', '!', ',']
 
         for word, score, pron in self.runG2PCommand (word_list_file) :
-            if word in self.lexicon:
-                # take first entry for target word in lexicon, e.g. assuming
-                # lexicon entries are sorted by frequency
-                line += self.lexicon[word][0].split(' ')
-            elif word in expected_punc:
+            if word in expected_punc:
                 # just in case some punc is assigned a pron
                 line += [word]
             else :
