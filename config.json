@@ -77,6 +77,8 @@
     "noam_schedule": false,        // use noam warmup and lr schedule.
     "grad_clip": 1.0,              // upper limit for gradients for clipping.
     "epochs": 1000,                // total number of epochs to train.
+    "steps": 0,                    // total number of steps to train. Overrides max epochs if set.
+    "strict_steps": false,         // if true, stop training as soon as max steps is reached, else at the end of the epoch
     "lr": 0.0001,                  // Initial learning rate. If Noam decay is active, maximum learning rate.
     "wd": 0.000001,                // Weight decay weight.
     "warmup_steps": 4000,          // Noam decay steps to increase the learning rate from 0 to "lr"

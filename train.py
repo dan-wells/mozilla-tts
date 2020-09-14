@@ -4,6 +4,7 @@ import sys
 import glob
 import time
 import traceback
+import math
 
 import numpy as np
 import torch
@@ -314,6 +315,15 @@ def train(model, criterion, optimizer, optimizer_st, scheduler,
                 tb_logger.tb_train_audios(global_step,
                                           {'TrainAudio': train_audio},
                                           c.audio["sample_rate"])
+
+        # end training mid-epoch if strictly running for n steps
+        if c.strict_steps and (global_step == c.steps) and not (global_step % c.save_step == 0):
+            # save final model
+            save_checkpoint(model, optimizer, global_step, epoch, model.decoder.r, OUT_PATH,
+                            optimizer_st=optimizer_st, model_loss=loss_dict['postnet_loss'].item())
+            end_time = time.time()
+            break
+
         end_time = time.time()
 
     # print epoch stats
@@ -550,6 +560,37 @@ def main(args):  # pylint: disable=redefined-outer-name
 
     # load data instances
     meta_data_train, meta_data_eval = load_meta_data(c.datasets)
+
+    # calculate max training epochs if configured to end after a certain
+    # number of training steps
+    if c.steps:
+        if c.gradual_training is None:
+            updates_per_epoch = len(meta_data_train) / c.batch_size
+            max_epochs = math.ceil(c.steps / updates_per_epoch)
+        else:
+            gt_regimes = c.gradual_training + [[c.steps, 0, 0]]
+            gt_regimes = sorted(gt_regimes, key=lambda x: x[0])
+            prev_regime = [-1, 0, 0]
+            regime_steps_remainder = 0
+            max_epochs = 0
+            for regime in gt_regimes:
+                first_step, r, batch_size = regime
+                if first_step > c.steps:
+                    print(" > NOTE: Training ends after {} steps, before gradual training regime".format(c.steps))
+                    break
+                if first_step == c.steps:
+                    r, batch_size = prev_regime[1:]
+                regime_steps = first_step - prev_regime[0] + regime_steps_remainder
+                # batch_size for data loader is set at epoch start, not exactly
+                # on steps defined in gradual_training
+                updates_per_epoch = len(meta_data_train) / batch_size
+                regime_steps_remainder = regime_steps % updates_per_epoch
+                prev_regime = regime
+                if regime_steps < updates_per_epoch:
+                    continue
+                else:
+                    max_epochs += regime_steps / updates_per_epoch
+        c.epochs = math.ceil(max_epochs)
 
     # parse speakers
     if c.use_speaker_embedding:
