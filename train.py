@@ -623,34 +623,25 @@ def main(args):  # pylint: disable=redefined-outer-name
     # number of training steps
     if c.steps:
         if c.gradual_training is None:
-            updates_per_epoch = len(meta_data_train) / c.batch_size
+            updates_per_epoch = math.ceil(len(meta_data_train) / c.batch_size)
             max_epochs = math.ceil(c.steps / updates_per_epoch)
         else:
             gt_regimes = c.gradual_training + [[c.steps, 0, 0]]
             gt_regimes = sorted(gt_regimes, key=lambda x: x[0])
-            prev_regime = [-1, 0, 0]
-            regime_steps_remainder = 0
             max_epochs = 0
-            for regime in gt_regimes:
+            for regime, next_regime in zip(gt_regimes, gt_regimes[1:]):
                 first_step, r, batch_size = regime
-                if first_step > c.steps:
+                end_step = next_regime[0]
+                if first_step == c.steps:
                     print(" > NOTE: Training ends after {} steps, before gradual training regime".format(c.steps))
                     break
-                if first_step == c.steps:
-                    r, batch_size = prev_regime[1:]
-                regime_steps = first_step - prev_regime[0] + regime_steps_remainder
-                # batch_size for data loader is set at epoch start, not exactly
-                # on steps defined in gradual_training
-                updates_per_epoch = len(meta_data_train) / batch_size
-                regime_steps_remainder = regime_steps % updates_per_epoch
-                prev_regime = regime
-                if regime_steps < updates_per_epoch:
-                    continue
-                else:
-                    max_epochs += regime_steps / updates_per_epoch
-        c.epochs = math.ceil(max_epochs)
+                regime_steps = end_step - first_step
+                # batch_size for data loader is set at next epoch start, not
+                # immediately on steps defined in gradual_training
+                updates_per_epoch = math.ceil(len(meta_data_train) / batch_size)
+                max_epochs += math.ceil(regime_steps / updates_per_epoch)
+        c.epochs = max_epochs
 
-        # add step count from restored checkpoint if fine-tuning
         c.steps += args.restore_step
         c.gradual_training = [[fs + args.restore_step, r, bs] for fs, r, bs in c.gradual_training]
 
