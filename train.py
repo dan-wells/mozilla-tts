@@ -291,7 +291,7 @@ def train(model, criterion, optimizer, optimizer_st, scheduler,
                     embeddings = []
                     for phone in embedding_inputs:
                         spe_tensor = torch.FloatTensor(spe_feature_map[phone])
-                        spe_tensor = spe_tensor.reshape(1, len(spe_features), 1)
+                        spe_tensor = spe_tensor.reshape(1, 1, len(spe_features))
                         if use_cuda:
                             spe_tensor = spe_tensor.cuda(non_blocking=True)
                         embedding = model.embedding.forward(spe_tensor).squeeze()

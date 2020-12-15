@@ -10,7 +10,7 @@ from .text.features import phoneme_to_feature, spe_feature_map
 
 def text_to_seqvec(text, CONFIG, text_format='text'):
     text_cleaner = [CONFIG.text_cleaner]
-    # text ot phonemes to sequence vector
+    # text to phonemes to sequence vector
     if CONFIG.use_phonemes:
         tp=CONFIG.characters if 'characters' in CONFIG.keys() else None
         seq = np.asarray(
@@ -171,6 +171,7 @@ def synthesis(model,
         if CONFIG.use_features:
             # must match conv1d weights type
             inputs = numpy_to_torch(inputs, torch.float, cuda=use_cuda)
+            inputs = inputs.transpose(0, 1) # seq length x features dim
         else:
             inputs = numpy_to_torch(inputs, torch.long, cuda=use_cuda)
         inputs = inputs.unsqueeze(0)

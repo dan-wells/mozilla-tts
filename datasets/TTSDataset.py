@@ -228,9 +228,10 @@ class MyDataset(Dataset):
 
             # PAD sequences with longest instance in the batch
             if self.use_features:
-                text = [i.transpose() for i in text] # features dim x length
+                text = [i.transpose() for i in text] # features dim x seq length
                 text = prepare_tensor(text, 1)
                 text = torch.FloatTensor(text)
+                text = text.transpose(1, 2) # seq length x features dim
             else:
                 text = prepare_data(text).astype(np.int32)
                 text = torch.LongTensor(text)

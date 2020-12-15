@@ -38,8 +38,7 @@ class Tacotron2(nn.Module):
         proj_speaker_dim = 80 if num_speakers > 1 else 0
         # embedding layer
         if self.feature_inputs:
-            self.embedding = nn.Conv1d(in_channels=num_chars, out_channels=512,
-                                       kernel_size=1, bias=False)
+            self.embedding = nn.Linear(num_chars, 512, bias=False)
         else:
             self.embedding = nn.Embedding(num_chars, 512, padding_idx=0)
         std = sqrt(2.0 / (num_chars + 512))
@@ -73,10 +72,7 @@ class Tacotron2(nn.Module):
         self._init_states()
         # compute mask for padding
         mask = sequence_mask(text_lengths).to(text.device)
-        if self.feature_inputs:
-            embedded_inputs = self.embedding(text)
-        else:
-            embedded_inputs = self.embedding(text).transpose(1, 2)
+        embedded_inputs = self.embedding(text).transpose(1, 2)
         encoder_outputs = self.encoder(embedded_inputs, text_lengths)
         encoder_outputs = self._add_speaker_embedding(encoder_outputs,
                                                       speaker_ids)
@@ -93,10 +89,7 @@ class Tacotron2(nn.Module):
 
     @torch.no_grad()
     def inference(self, text, speaker_ids=None):
-        if self.feature_inputs:
-            embedded_inputs = self.embedding(text)
-        else:
-            embedded_inputs = self.embedding(text).transpose(1, 2)
+        embedded_inputs = self.embedding(text).transpose(1, 2)
         encoder_outputs = self.encoder.inference(embedded_inputs)
         encoder_outputs = self._add_speaker_embedding(encoder_outputs,
                                                       speaker_ids)
