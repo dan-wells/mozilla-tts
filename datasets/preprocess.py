@@ -123,6 +123,23 @@ def mailabs(root_path, meta_files=None):
                     raise RuntimeError("> File %s does not exist!"%(wav_file))
     return items
 
+def mailabs_single(root_path, meta_file):
+    """Parse single metadata file created from all utts from M-AILABS speaker"""
+    txt_file = os.path.join(root_path, meta_file)
+    items = []
+    speaker_name = os.path.basename(root_path)
+    print(" | > M-AILABS speaker {}".format(speaker_name))
+    print(" | > {}".format(txt_file))
+    with open(txt_file, 'r') as ttf:
+        for line in ttf:
+            cols = line.split('|')
+            wav_file = os.path.join(root_path, cols[0] + '.wav')
+            if os.path.isfile(wav_file):
+                text = cols[1].strip()
+                items.append([text, wav_file, speaker_name])
+            else:
+                raise RuntimeError("> File %s does not exist!"%(wav_file))
+    return items
 
 def ljspeech(root_path, meta_file):
     """Normalizes the LJSpeech meta data file to TTS format"""
