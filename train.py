@@ -615,7 +615,12 @@ def main(args):  # pylint: disable=redefined-outer-name
             group['lr'] = c.lr
         print(" > Model restored from step %d" % checkpoint['step'],
               flush=True)
-        args.restore_step = checkpoint['step']
+        # continue should start counting steps where training left off
+        # restore should start new training from seed model
+        if args.continue_path:
+            args.restore_step = checkpoint['step']
+        else:
+            args.restore_step = 0
     else:
         args.restore_step = 0
 
@@ -639,11 +644,10 @@ def main(args):  # pylint: disable=redefined-outer-name
                 # batch_size for data loader is set at next epoch start, not
                 # immediately on steps defined in gradual_training
                 updates_per_epoch = math.ceil(len(meta_data_train) / batch_size)
+                # TODO: take args.restore_step into account here when continuing training
                 max_epochs += math.ceil(regime_steps / updates_per_epoch)
-        c.epochs = max_epochs
 
-        c.steps += args.restore_step
-        c.gradual_training = [[fs + args.restore_step, r, bs] for fs, r, bs in c.gradual_training]
+        c.epochs = max_epochs
 
     if use_cuda:
         model.cuda()
