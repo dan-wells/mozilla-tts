@@ -79,7 +79,7 @@ def convert_to_ascii(text):
 
 
 def remove_aux_symbols(text):
-    text = re.sub(r'[\<\>\(\)\[\]\"\«\»]+', '', text)
+    text = re.sub(r'[\<\>\(\)\[\]\"\«\»\^]+', '', text)
     return text
 
 
@@ -89,6 +89,8 @@ def replace_symbols(text):
     text = text.replace('–', ' ')
     text = text.replace('—', ' ')
     text = text.replace(':', ' ')
+    text = text.replace('‘', "'")
+    text = text.replace('’', "'")
     return text
 
 
@@ -141,11 +143,25 @@ def phoneme_cleaners(text):
     text = collapse_whitespace(text)
     return text
 
+_abbreviations_german = [(re.compile('\\b%s\\.' % x[0], re.IGNORECASE), x[1])
+                         for x in [
+                             ('dr', 'doktor'),
+                             ('sr', 'seiner'),
+                             ('maj', 'majestät'),
+                             ('z.b', 'zum beispiel'),
+                             ('d.h', 'das heißt'),
+                         ]]
+
+def expand_abbreviations_german(text):
+    for regex, replacement in _abbreviations_german:
+        text = re.sub(regex, replacement, text)
+    return text
 
 def german_cleaners(text):
     '''Pipeline for German text.'''
     text = replace_symbols(text)
     text = remove_aux_symbols(text)
     text = lowercase(text)
+    text = expand_abbreviations_german(text)
     text = collapse_whitespace(text)
     return text
