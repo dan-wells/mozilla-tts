@@ -135,6 +135,11 @@ def set_init_dict(model_dict, checkpoint, c):
     model_dict.update(pretrained_dict)
     print(" | > {} / {} layers are restored.".format(len(pretrained_dict),
                                                      len(model_dict)))
+    if len(pretrained_dict) != len(model_dict):
+        print(" | > Reinitialized layers:")
+        for i in model_dict:
+            if i not in pretrained_dict:
+                print(" |   - {}".format(i))
     return model_dict
 
 
