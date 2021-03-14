@@ -41,3 +41,6 @@ def make_audio_page(audios, transcripts=None, html_out='audios.html'):
             html.write(transcript_col.format(transcript))
         html.write(html_tail)
 
+if __name__ == "__main__":
+    audios = os.getcwd()
+    make_audio_page(audios)
