@@ -252,7 +252,7 @@ if __name__ == "__main__":
             mel_path = os.path.join(args.out_path, 'mels')
             if not os.path.exists(mel_path):
                 os.makedirs(mel_path)
-            mel_path = os.path.join(mel_path, file_name.replace('.wav', '.npy'))
+            mel_path = os.path.join(mel_path, file_name.replace('.wav', '-feats.npy'))
             np.save(mel_path, mel_spec)
 
     # write html audio page
