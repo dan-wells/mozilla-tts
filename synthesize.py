@@ -6,6 +6,8 @@ import torch
 import json
 import string
 
+import numpy as np
+
 from TTS.utils.synthesis import synthesis
 from TTS.utils.generic_utils import setup_model
 from TTS.utils.g2p import load_g2p, train_g2p
@@ -108,10 +110,18 @@ if __name__ == "__main__":
         choices=["text", "phoneme"],
         default="text")
     parser.add_argument(
+        '--text_meta',
+        action='store_true',
+        help="Read input text file as metadata with lines of <file_name|text|...>")
+    parser.add_argument(
         '--html_audio_page',
         type=str,
         help="File to write html for playing generated audio files.",
         default="")
+    parser.add_argument(
+        '--save_mels',
+        action='store_true',
+        help="Save mel spectrogram features alongside generated audio files.")
     args = parser.parse_args()
 
     if args.vocoder_path != "":
@@ -188,7 +198,10 @@ if __name__ == "__main__":
     # get input texts
     if os.path.isfile(args.text):
         with open(args.text) as text_lines:
-            texts = [i.strip() for i in text_lines.readlines()]
+            if args.text_meta:
+                texts = [i.strip().split('|') for i in text_lines.readlines()]
+            else:
+                texts = [i.strip() for i in text_lines.readlines()]
     else:
         texts = [args.text]
 
@@ -197,8 +210,10 @@ if __name__ == "__main__":
 
     # synthesize voice
     for n_audio, text in enumerate(texts):
+        if args.text_meta:
+            text_id, text = text[:2]
         print(" > Text: {}".format(text))
-        _, _, _, wav = tts(model,
+        _, mel_spec, _, wav = tts(model,
                            vocoder_model,
                            C,
                            VC,
@@ -212,19 +227,33 @@ if __name__ == "__main__":
                            figures=False)
 
         # save the results
-        if args.text_format == 'text':
+        if args.text_meta:
+            file_name = text_id + '.wav'
+        elif args.text_format == 'text':
             file_name = text.replace(" ", "_")
             file_name = file_name.translate(
                 str.maketrans('', '', string.punctuation.replace('_', ''))) + '.wav'
         else:
             file_name = 'SynthAudio{:04d}.wav'.format(n_audio)
-        if not os.path.exists(args.out_path):
-            os.makedirs(args.out_path)
-        out_path = os.path.join(args.out_path, file_name)
+
+        if args.save_mels:
+            out_path = os.path.join(args.out_path, 'wavs')
+        else:
+            out_path = args.out_path
+        if not os.path.exists(out_path):
+            os.makedirs(out_path)
+        out_path = os.path.join(out_path, file_name)
         print(" > Saving output to {}".format(out_path))
         ap.save_wav(wav, out_path)
         if args.html_audio_page:
             wavs.append(out_path)
+
+        if args.save_mels:
+            mel_path = os.path.join(args.out_path, 'mels')
+            if not os.path.exists(mel_path):
+                os.makedirs(mel_path)
+            mel_path = os.path.join(mel_path, file_name.replace('.wav', '.npy'))
+            np.save(mel_path, mel_spec)
 
     # write html audio page
     if args.html_audio_page:
