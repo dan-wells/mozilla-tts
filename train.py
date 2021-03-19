@@ -16,8 +16,8 @@ from distribute import (DistributedSampler, apply_gradient_allreduce,
 from TTS.layers.losses import TacotronLoss
 from TTS.utils.audio import AudioProcessor
 from TTS.utils.generic_utils import (count_parameters, create_experiment_folder, remove_experiment_folder,
-                                     get_git_branch, set_init_dict,
-                                     setup_model, KeepAverage, check_config)
+                                     get_git_branch, set_init_dict, setup_model, copy_symbol_embeddings,
+                                     KeepAverage, check_config)
 from TTS.utils.g2p import load_g2p, train_g2p
 from TTS.utils.g2p.lexicon import preprocess_lexicon
 from TTS.utils.io import (save_best_model, save_checkpoint,
@@ -599,6 +599,13 @@ def main(args):  # pylint: disable=redefined-outer-name
 
     if args.restore_path:
         checkpoint = torch.load(args.restore_path, map_location='cpu')
+        # re-initialize some input symbols using embeddings of other known symbols
+        if c.copy_symbol_embeddings is not None:
+            if c.use_phonemes:
+                symbol_keys = phonemes
+            else:
+                symbol_keys = symbols
+            checkpoint = copy_symbol_embeddings(c.copy_symbol_embeddings, symbol_keys, checkpoint)
         try:
             # TODO: fix optimizer init, model.cuda() needs to be called before
             # optimizer restore

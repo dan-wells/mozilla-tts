@@ -143,6 +143,20 @@ def set_init_dict(model_dict, checkpoint, c):
     return model_dict
 
 
+# TODO: make this work with automatic comparison of phonological feature
+# vectors of target/source phonemes
+def copy_symbol_embeddings(symbol_map, symbols, checkpoint):
+    """Copy input embeddings from one set of symbols to another."""
+    print(" > Copying input embeddings for specified symbols:")
+    for target, source in symbol_map:
+        tgt_idx = symbols.index(target)
+        src_idx = symbols.index(source)
+        src_embed = checkpoint['model']['embedding.weight'][src_idx]
+        checkpoint['model']['embedding.weight'][tgt_idx] = src_embed
+        print(" | > {} <- {}".format(target, source))
+    return checkpoint
+
+
 def setup_model(num_chars, num_speakers, c):
     print(" > Using model: {}".format(c.model))
     MyModel = importlib.import_module('TTS.models.' + c.model.lower())

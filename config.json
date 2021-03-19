@@ -52,6 +52,8 @@
     // },
     // LJSpeech espeak phonemes by frequency: "ˈɪətndːsalɹðikzɒɛmˌpwvʊefbhʃɔɐʌuŋɜɡjʒɑθr̩xɾoæᵻ"
 
+    copy_symbol_embeddings: null, // Mapping between input symbols for fine-tuned model and input symbols for source model. Use to initialize unseen symbols with sensible values (and not just leaving at untrained random initialization), e.g. new phones in target language: [["x", "k"], ["ç", "ʃ"], ["ø", "e"]]
+
     // DISTRIBUTED TRAINING
     "distributed":{
         "backend": "nccl",
