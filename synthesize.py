@@ -75,9 +75,13 @@ if __name__ == "__main__":
         help='Path to save final wav file. Wav file will be names as the text given.',
     )
     parser.add_argument('--use_cuda',
-                        type=bool,
-                        help='Run model on CUDA.',
-                        default=False)
+                        action='store_true',
+                        help='Run model on CUDA.')
+    parser.add_argument('--max_decoder_steps',
+        type=int,
+        default=None,
+        help='Set max output timesteps to run decoder.'
+    )
     parser.add_argument(
         '--vocoder_path',
         type=str,
@@ -91,9 +95,8 @@ if __name__ == "__main__":
                         default="")
     parser.add_argument(
         '--batched_vocoder',
-        type=bool,
-        help="If True, vocoder model uses faster batch processing.",
-        default=True)
+        action='store_true',
+        help="If True, vocoder model uses faster batch processing.")
     parser.add_argument('--speakers_json',
                         type=str,
                         help="JSON file for multi-speaker model.",
@@ -164,6 +167,8 @@ if __name__ == "__main__":
     if args.use_cuda:
         model.cuda()
     model.decoder.set_r(cp['r'])
+    if args.max_decoder_timesteps is not None:
+        model.decoder.max_decoder_steps = args.max_decoder_timesteps
 
     # load vocoder model
     if args.vocoder_path != "":
